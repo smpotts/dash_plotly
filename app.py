@@ -1,16 +1,47 @@
-# This is a sample Python script.
+# Import packages
+from dash import Dash, html, dash_table, dcc, callback, Output, Input
+import pandas as pd
+import plotly.express as px
+import dash_mantine_components as dmc
 
-# Press ⌃R to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
+# Incorporate data
+df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/gapminder2007.csv')
+
+# Initialize the app - incorporate a Dash Mantine theme
+external_stylesheets = [dmc.theme.DEFAULT_COLORS]
+app = Dash(__name__, external_stylesheets=external_stylesheets)
+
+# App layout
+app.layout = dmc.Container([
+    dmc.Title('Country, Continent Data Analysis with Dash', color="blue", size="h3"),
+    dmc.RadioGroup(
+            [dmc.Radio(i, value=i) for i in  ['pop', 'lifeExp', 'gdpPercap']],
+            id='my-dmc-radio-item',
+            value='lifeExp',
+            size="sm"
+        ),
+    dmc.Grid([
+        dmc.Col([
+            dash_table.DataTable(data=df.to_dict('records'), page_size=12, style_table={'overflowX': 'auto'})
+        ], span=6),
+        dmc.Col([
+            dcc.Graph(figure={}, id='graph-placeholder')
+        ], span=6),
+    ]),
+
+], fluid=True)
 
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
+# Add controls to build the interaction
+@callback(
+    Output(component_id='graph-placeholder', component_property='figure'),
+    Input(component_id='my-dmc-radio-item', component_property='value')
+)
+def update_graph(col_chosen):
+    fig = px.histogram(df, x='continent', y=col_chosen, histfunc='avg')
+    return fig
 
 
-# Press the green button in the gutter to run the script.
+# Run the App
 if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    app.run(debug=True)
